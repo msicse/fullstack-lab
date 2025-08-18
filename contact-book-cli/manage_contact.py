@@ -10,5 +10,10 @@ def display_contacts(contacts):
         print(f"   Email: {contact['email']}")
         print(f"   Address: {contact['address']}\n")
 
-
+def add_contact(contacts):
+    print("\n=== Add New Contact ===")
+    name = input("Enter Name: ").strip()
+    phone = input("Enter Phone Number: ").strip()
+    email = input("Enter Email: ").strip()
+    address = input("Enter Address: ").strip()
 

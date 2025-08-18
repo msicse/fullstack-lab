@@ -1,4 +1,4 @@
-from storage import load_contacts
+from storage import load_contacts, save_contact
 from main_menu import show_menu
 from manage_contact import display_contacts
 
@@ -16,7 +16,12 @@ def main():
     while True:
         selected_option  = show_menu()
         if selected_option == "1":
-            pass
+            contacts = add_contact(contacts)
+            save_contact(contacts)
+            if contacts:
+                print("Contact saved successfully!\n")
+            else:
+                print("Failed to save contact.\n")
         elif selected_option == "2":
             display_contacts(contacts)
         elif selected_option == "5":
