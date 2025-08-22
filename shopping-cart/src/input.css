@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.footer-bg {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+}
