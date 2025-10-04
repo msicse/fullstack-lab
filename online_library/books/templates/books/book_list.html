@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}{% if books.number > 1 %}Page {{ books.number }} - {% endif %}{% if query %}Search: "{{ query }}" - {% endif %}{% if selected_category_obj %}{{ selected_category_obj.name }} - {% endif %}Nature Library{% endblock %}
+
+{% block hero %}
+{% if show_hero != False %}
+<!-- Hero Section -->
+<div class="bg-gradient-to-r from-library-green to-emerald-600 text-white">
+  <div class="container mx-auto px-4 py-8">
+    <div class="text-center">
+      <h1 class="text-3xl md:text-4xl font-bold mb-3">
+         Welcome to Nature Library
+      </h1>
+      <p class="text-lg md:text-xl mb-6 text-blue-100">
+        Discover amazing books and join our reading community
+      </p>
+      <div class="flex justify-center">
+        {% if not user.is_authenticated %}
+          <a href="{% url 'signup' %}" class="bg-white text-library-green px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors mr-4">
+            Join Now
+          </a>
+          <a href="{% url 'login' %}" class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-library-green transition-colors">
+            Login
+          </a>
+        {% else %}
+          <div class="text-center">
+            <p class="text-blue-100 text-lg mb-2">
+              Happy reading, <span class="font-semibold text-white">{{ user.username }}</span>! 
+            </p>
+            <p class="text-blue-200 text-sm">
+              You're signed in as: <span class="font-semibold">{{ user.profile.get_role_display }}</span>
+              {% if user.profile.is_user %}- You can browse books and write reviews{% endif %}
+              {% if user.profile.is_admin %}- You have full admin access{% endif %}
+            </p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<!-- Stats Section -->
+<div class="bg-white rounded-xl shadow-lg p-4 mb-4">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+    <div>
+      <div class="text-2xl font-bold text-library-green mb-1">{{ total_books }}</div>
+      <div class="text-gray-600">Books {% if query or selected_category %}Found{% else %}Available{% endif %}</div>
+    </div>
+    <div>
+      <div class="text-2xl font-bold text-library-green mb-1">{{ categories|length }}</div>
+      <div class="text-gray-600">Categories</div>
+    </div>
+    <div>
+      <div class="text-2xl font-bold text-library-green mb-1">∞</div>
+      <div class="text-gray-600">Reading Adventures</div>
+    </div>
+  </div>
+</div>
+
+<!-- Search Section -->
+<div class="bg-white rounded-xl shadow-lg p-4 mb-4">
+  <h2 class="text-xl font-bold mb-4 text-center text-gray-800">
+    Find Your Next Great Read
+  </h2>
+  
+  <form method="get" class="flex flex-col md:flex-row gap-4">
+    <div class="flex-1">
+      <input type="text" name="q" value="{{ request.GET.q }}" 
+             placeholder="Search by title, author, or keyword..."
+             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-library-green focus:border-transparent">
+    </div>
+    <div class="md:w-48">
+      <select name="category" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-library-green">
+        <option value="">All Categories</option>
+        {% for cat in categories %}
+        <option value="{{ cat.id }}" {% if request.GET.category == cat.id|stringformat:"s" %}selected{% endif %}>
+          {{ cat.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="bg-library-green text-white px-8 py-3 rounded-lg hover:bg-library-dark transition-colors font-semibold">
+      Search
+    </button>
+  </form>
+</div>
+
+<!-- Books Grid -->
+<div class="mb-4">
+  <h2 class="text-xl font-bold text-gray-800 mb-4">
+    {% if request.GET.q or request.GET.category %}
+      Search Results
+    {% else %}
+      Featured Books
+    {% endif %}
+  </h2>
+  
+  {% if books %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      {% for book in books %}
+      <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 group">
+        <div class="relative">
+          {% if book.cover_image %}
+            <img src="{{ book.cover_image.url }}" class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300">
+          {% else %}
+            <div class="w-full h-64 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+              <span class="text-6xl text-gray-400">📖</span>
+            </div>
+          {% endif %}
+          
+          <!-- Category badge -->
+          {% if book.category %}
+            <div class="absolute top-3 left-3">
+              <span class="bg-library-green text-white px-2 py-1 rounded-full text-xs font-semibold">
+                {{ book.category.name }}
+              </span>
+            </div>
+          {% endif %}
+        </div>
+        
+        <div class="p-3">
+          <h3 class="text-base font-bold text-gray-800 mb-1 line-clamp-2">{{ book.title }}</h3>
+          <p class="text-gray-600 mb-2">by {{ book.author }}</p>
+
+          <!-- Rating -->
+          <div class="flex items-center mb-3">
+            <div class="text-yellow-400 mr-2">
+              {% for i in "12345" %}
+                {% if forloop.counter <= book.average_rating|floatformat:0 %}★{% else %}☆{% endif %}
+              {% endfor %}
+            </div>
+            <span class="text-gray-600 text-sm">({{ book.average_rating|floatformat:1 }})</span>
+          </div>
+
+          <a href="{% url 'book-detail' book.id %}" 
+             class="block w-full text-center bg-library-green text-white py-2 rounded-lg hover:bg-library-dark transition-colors font-semibold">
+            View Details
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <!-- Empty State -->
+    <div class="text-center py-8">
+      <div class="text-6xl mb-4"></div>
+      <h3 class="text-2xl font-bold text-gray-600 mb-4">No books found</h3>
+      <p class="text-gray-500 mb-6">
+        {% if request.GET.q or request.GET.category %}
+          Try adjusting your search criteria or browse all books.
+        {% else %}
+          It looks like there are no books in the library yet.
+        {% endif %}
+      </p>
+      {% if request.GET.q or request.GET.category %}
+        <a href="/" class="bg-library-green text-white px-6 py-3 rounded-lg hover:bg-library-dark transition-colors">
+          Browse All Books
+        </a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+
+<!-- Pagination -->
+{% if books.has_other_pages %}
+<div class="mt-6">
+  <nav class="flex justify-center" aria-label="Book pagination">
+    <div class="flex flex-wrap items-center justify-center gap-2">
+      <!-- Previous Page -->
+      {% if books.has_previous %}
+        <a href="?{% if query %}q={{ query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}page={{ books.previous_page_number }}" 
+           class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-library-green transition-colors">
+          Previous
+        </a>
+      {% else %}
+        <span class="px-4 py-2 text-sm font-medium text-gray-400 bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed">
+          Previous
+        </span>
+      {% endif %}
+
+      <!-- Page Numbers -->
+      <div class="flex items-center space-x-1">
+        {% for num in books.paginator.page_range %}
+          {% if num == books.number %}
+            <!-- Current Page -->
+            <span class="px-4 py-2 text-sm font-bold text-white bg-library-green border border-library-green rounded-lg">
+              {{ num }}
+            </span>
+          {% elif num > books.number|add:'-3' and num < books.number|add:'3' %}
+            <!-- Pages near current page -->
+            <a href="?{% if query %}q={{ query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}page={{ num }}" 
+               class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-library-green hover:text-white transition-colors">
+              {{ num }}
+            </a>
+          {% elif num == 1 or num == books.paginator.num_pages %}
+            <!-- First and last pages -->
+            <a href="?{% if query %}q={{ query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}page={{ num }}" 
+               class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-library-green hover:text-white transition-colors">
+              {{ num }}
+            </a>
+          {% elif num == 2 or num == books.paginator.num_pages|add:'-1' %}
+            <!-- Show ellipsis -->
+            <span class="px-2 py-2 text-sm text-gray-500">…</span>
+          {% endif %}
+        {% endfor %}
+      </div>
+
+      <!-- Next Page -->
+      {% if books.has_next %}
+        <a href="?{% if query %}q={{ query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}page={{ books.next_page_number }}" 
+           class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-library-green transition-colors">
+          Next
+        </a>
+      {% else %}
+        <span class="px-4 py-2 text-sm font-medium text-gray-400 bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed">
+          Next
+        </span>
+      {% endif %}
+    </div>
+  </nav>
+
+  <!-- Pagination Info -->
+  <div class="flex flex-col md:flex-row items-center justify-between mt-4 space-y-2 md:space-y-0">
+    <div class="text-sm text-gray-600">
+      Showing {{ books.start_index }}-{{ books.end_index }} of {{ books.paginator.count }} books
+      {% if query or selected_category_obj %}
+        {% if query %}for "{{ query }}"{% endif %}
+        {% if selected_category_obj %}in {{ selected_category_obj.name }}{% endif %}
+      {% endif %}
+    </div>
+    
+    <!-- Quick Page Navigation -->
+    {% if books.paginator.num_pages > 3 %}
+    <div class="flex items-center space-x-2">
+      <span class="text-sm text-gray-600">Go to page:</span>
+      <form method="get" class="inline-flex items-center space-x-2">
+        {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
+        {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
+        <input type="number" name="page" min="1" max="{{ books.paginator.num_pages }}" 
+               value="{{ books.number }}" 
+               class="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-library-green">
+        <button type="submit" 
+                class="px-3 py-1 text-sm bg-library-green text-white rounded hover:bg-library-dark transition-colors">
+          Go
+        </button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

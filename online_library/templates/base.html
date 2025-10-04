@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Online Library - Discover Your Next Great Read{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'library-green': '#059669',
+            'library-light': '#10b981',
+            'library-dark': '#047857',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-gradient-to-br from-green-50 to-emerald-100 min-h-screen">
+  <!-- Enhanced Navbar -->
+  <nav class="sticky top-0 shadow-lg border-b border-gray-200 z-50 bg-white">
+    <div class="container mx-auto px-4">
+      <div class="flex justify-between items-center py-3">
+        <a href="/" class="flex items-center space-x-2 text-library-green font-bold text-xl">
+          <span class="text-2xl"></span>
+          <span>Online Library</span>
+        </a>
+        
+        <div class="hidden md:flex items-center space-x-6">
+          <a href="/books/" class="text-gray-700 hover:text-library-green transition-colors">Books</a>
+          {% if user.is_authenticated %}
+            {% if user.profile.is_admin %}
+              <a href="/admin/" class="text-library-dark hover:text-library-green transition-colors font-semibold">Admin Panel</a>
+            {% endif %}
+            <div class="flex items-center space-x-2">
+              <span class="text-gray-600">Welcome, <span class="font-semibold text-library-green">{{ user.username }}</span></span>
+              <span class="bg-{% if user.profile.is_admin %}green{% else %}blue{% endif %}-100 text-{% if user.profile.is_admin %}green{% else %}blue{% endif %}-800 px-2 py-1 rounded-full text-xs font-semibold">
+                {{ user.profile.get_role_display }}
+              </span>
+            </div>
+            <form method="post" action="{% url 'custom_logout' %}" class="inline">
+              {% csrf_token %}
+              <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors">Logout</button>
+            </form>
+          {% else %}
+            <a href="{% url 'login' %}" class="text-library-green hover:text-library-dark transition-colors">Login</a>
+            <a href="{% url 'signup' %}" class="bg-library-green text-white px-4 py-2 rounded-lg hover:bg-library-dark transition-colors"> Sign Up</a>
+          {% endif %}
+        </div>
+        
+        <!-- Mobile menu button -->
+        <div class="md:hidden">
+          <button class="text-gray-700 hover:text-library-green">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  {% block hero %}{% endblock %}
+
+  <!-- Messages -->
+  {% if messages %}
+    <div class="container mx-auto px-4 pt-4">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} bg-{% if message.tags == 'error' %}red{% elif message.tags == 'success' %}green{% elif message.tags == 'warning' %}yellow{% else %}blue{% endif %}-100 border border-{% if message.tags == 'error' %}red{% elif message.tags == 'success' %}green{% elif message.tags == 'warning' %}yellow{% else %}blue{% endif %}-400 text-{% if message.tags == 'error' %}red{% elif message.tags == 'success' %}green{% elif message.tags == 'warning' %}yellow{% else %}blue{% endif %}-700 px-4 py-3 rounded mb-4">
+          <div class="flex items-center">
+            <span class="mr-2">
+              {% if message.tags == 'success' %}{% elif message.tags == 'error' %}{% elif message.tags == 'warning' %}{% else %}{% endif %}
+            </span>
+            {{ message }}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <main class="container mx-auto px-4 py-4">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white mt-8">
+    <div class="container mx-auto px-4 py-6">
+      <div class="text-center">
+        <div class="flex items-center justify-center space-x-2 mb-4">
+          <span class="text-2xl"></span>
+          <span class="text-xl font-bold">Online Library</span>
+        </div>
+        <p class="text-gray-400 mb-4">Discover your next great read</p>
+        <div class="flex justify-center space-x-6 text-sm">
+          <a href="/" class="hover:text-library-light transition-colors"> Home</a>
+          <span class="text-gray-500">|</span>
+          <a href="/books/" class="hover:text-library-light transition-colors"> Books</a>
+          <span class="text-gray-500">|</span>
+          <span class="text-gray-400">© {{ "now"|date:"Y" }} Online Library</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
