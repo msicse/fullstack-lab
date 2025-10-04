@@ -3,16 +3,6 @@
 {% block title %}{{ book.title }} - Online Library{% endblock %}
 
 {% block content %}
-<!-- Messages -->
-{% if messages %}
-  <div class="mb-4">
-    {% for message in messages %}
-      <div class="alert alert-{{ message.tags }} bg-{% if message.tags == 'error' %}red{% elif message.tags == 'success' %}green{% else %}blue{% endif %}-100 border border-{% if message.tags == 'error' %}red{% elif message.tags == 'success' %}green{% else %}blue{% endif %}-400 text-{% if message.tags == 'error' %}red{% elif message.tags == 'success' %}green{% else %}blue{% endif %}-700 px-4 py-3 rounded mb-4">
-        {{ message }}
-      </div>
-    {% endfor %}
-  </div>
-{% endif %}
 
 <!-- Breadcrumb Navigation -->
 <nav class="mb-4">
@@ -136,7 +126,7 @@
           <div class="flex flex-wrap gap-2">
             {% for i in "12345" %}
               <label class="flex items-center cursor-pointer">
-                <input type="radio" name="rating" value="{{ i }}" class="hidden peer" {% if i == "5" %}checked{% endif %}>
+                <input type="radio" name="rating" value="{{ i }}" class="hidden peer" {% if form_data.rating == i or i == "5" and not form_data.rating %}checked{% endif %}>
                 <div class="flex items-center space-x-1 px-3 py-2 rounded-lg border border-gray-200 peer-checked:border-library-green peer-checked:bg-green-50 hover:bg-gray-50 transition-colors">
                   <span class="text-yellow-400">
                     {% for j in "12345" %}
@@ -160,7 +150,7 @@
             placeholder="Share your thoughts about this book..."
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-library-green focus:border-transparent resize-vertical text-sm"
             required
-          ></textarea>
+          >{% if form_data.comment %}{{ form_data.comment }}{% endif %}</textarea>
         </div>
         
         <!-- Submit Button -->
@@ -254,8 +244,9 @@
 </div>
 
 <script>
-// Smooth scroll to review form
+// Enhanced form handling and user experience
 document.addEventListener('DOMContentLoaded', function() {
+  // Smooth scroll to review form
   const writeReviewBtn = document.querySelector('a[href="#write-review"]');
   if (writeReviewBtn) {
     writeReviewBtn.addEventListener('click', function(e) {
@@ -267,6 +258,68 @@ document.addEventListener('DOMContentLoaded', function() {
           block: 'start'
         });
       }
+    });
+  }
+
+  // Clear form after successful submission (if page was redirected with success message)
+  const successMessage = document.querySelector('.alert-success');
+  const reviewForm = document.getElementById('write-review');
+  
+  if (successMessage && reviewForm) {
+    // Clear the form if there's a success message
+    const commentField = document.getElementById('comment');
+    const ratingInputs = document.querySelectorAll('input[name="rating"]');
+    
+    if (commentField) {
+      commentField.value = '';
+    }
+    
+    // Reset rating to default (5 stars)
+    ratingInputs.forEach(input => {
+      if (input.value === '5') {
+        input.checked = true;
+      } else {
+        input.checked = false;
+      }
+    });
+  }
+
+  // Auto-hide success/error messages after 5 seconds
+  const messages = document.querySelectorAll('.bg-red-100, .bg-green-100, .bg-yellow-100, .bg-blue-100');
+  messages.forEach(message => {
+    // Add initial smooth appearance
+    message.style.opacity = '0';
+    message.style.transform = 'translateY(-10px)';
+    message.style.transition = 'all 0.3s ease-out';
+    
+    // Fade in
+    setTimeout(() => {
+      message.style.opacity = '1';
+      message.style.transform = 'translateY(0)';
+    }, 100);
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+      message.style.transition = 'all 0.5s ease-out';
+      message.style.opacity = '0';
+      message.style.transform = 'translateY(-10px)';
+      setTimeout(() => {
+        if (message.parentNode) {
+          message.remove();
+        }
+      }, 500);
+    }, 5000);
+  });
+
+  // Form submission feedback
+  const submitBtn = document.querySelector('button[type="submit"]');
+  const form = document.querySelector('form');
+  
+  if (form && submitBtn) {
+    form.addEventListener('submit', function() {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+      submitBtn.classList.add('opacity-75');
     });
   }
 });

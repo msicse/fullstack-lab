@@ -102,6 +102,7 @@ def book_detail(request, pk):
     book = get_object_or_404(Book, pk=pk)
     user_has_reviewed = False
     user_can_review = False
+    form_data = {}  # Store form data for re-rendering on errors
     
     if request.user.is_authenticated and hasattr(request.user, 'profile'):
         user_has_reviewed = Review.objects.filter(book=book, user=request.user).exists()
@@ -110,11 +111,19 @@ def book_detail(request, pk):
 
     if request.method == "POST" and request.user.is_authenticated and user_can_review:
         try:
-            rating = int(request.POST.get("rating", 5))
+            rating = request.POST.get("rating", "")
             comment = request.POST.get("comment", "").strip()
             
+            # Store form data to preserve it on errors
+            form_data = {
+                'rating': rating,
+                'comment': comment
+            }
+            
             # Validation
-            if not (1 <= rating <= 5):
+            if not rating:
+                messages.error(request, "Please select a rating for your review.")
+            elif not (1 <= int(rating) <= 5):
                 messages.error(request, "Please select a valid rating between 1 and 5 stars.")
             elif not comment:
                 messages.error(request, "Please write a comment for your review.")
@@ -124,7 +133,7 @@ def book_detail(request, pk):
                 messages.error(request, "You have already reviewed this book.")
             else:
                 # Create the review
-                Review.objects.create(book=book, user=request.user, rating=rating, comment=comment)
+                Review.objects.create(book=book, user=request.user, rating=int(rating), comment=comment)
                 messages.success(request, "Thank you for your review! It has been added successfully.")
                 return redirect("book-detail", pk=book.id)
                 
@@ -133,9 +142,14 @@ def book_detail(request, pk):
         except Exception as e:
             messages.error(request, "An error occurred while saving your review. Please try again.")
 
+    # Refresh user_has_reviewed status in case a review was just added
+    if request.user.is_authenticated and hasattr(request.user, 'profile'):
+        user_has_reviewed = Review.objects.filter(book=book, user=request.user).exists()
+
     context = {
         'book': book,
         'user_has_reviewed': user_has_reviewed,
         'user_can_review': user_can_review,
+        'form_data': form_data,  # Pass form data to template
     }
     return render(request, "books/book_detail.html", context)
